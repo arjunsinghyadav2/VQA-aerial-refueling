@@ -10,11 +10,12 @@ from vertexai.generative_models import (
     SafetySetting
 )
 
-# Path to your service account key JSON file
-SERVICE_ACCOUNT_FILE = '/home/ayadav@us.ara.com/.gcp/genai-project-434704-b5acdf2af4cd.json'
+def get_google_credentials():
+    google_credentials = st.secrets["google_credentials"]
+    return service_account.Credentials.from_service_account_info(google_credentials)
 
-# Load credentials from the service account file
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
+# Initialize Google Cloud Client with the credentials from Secrets
+credentials = get_google_credentials()
 
 # Initialize Vertex AI with credentials
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
