@@ -37,12 +37,10 @@ def generate_signed_url(bucket_name, blob_name):
     url = blob.generate_signed_url(expiration=timedelta(minutes=30))  
     return url
 
-def analyze_video(video_uri):
+# Function to analyze video using Vertex AI and user prompt
+def analyze_video(video_uri, user_prompt):
     video1 = Part.from_uri(mime_type="video/mp4", uri=video_uri)
-    text1 = """
-    Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason?
-    During this time layout time for each attempt whether successful or unsuccessful.
-    """
+    
     generation_config = {
         "max_output_tokens": 8192,
         "temperature": 0,
@@ -68,8 +66,10 @@ def analyze_video(video_uri):
         ),
     ]
     model = GenerativeModel("gemini-1.5-pro-001")
+    
+    # Use the user-provided prompt
     responses = model.generate_content(
-        [video1, text1],
+        [video1, user_prompt],
         generation_config=generation_config,
         safety_settings=safety_settings,
         stream=True
@@ -84,15 +84,19 @@ def analyze_video(video_uri):
 def main():
     st.title("Aerial Refueling Video Analysis")
 
-    bucket_name = "air-refueling-video-analysis-bucket"#bucket name
+    bucket_name = "air-refueling-video-analysis-bucket"  # Your bucket name
     video_files = list_videos(bucket_name)
 
     if not video_files:
         st.warning("No videos found in the bucket.")
         return
 
-    #adding dropdown to select video
+    # Dropdown to select a video
     selected_video = st.selectbox("Select a video to analyze", video_files)
+
+    # Add text input for custom user prompt
+    user_prompt = st.text_area("Enter your analysis prompt", 
+                               value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
     if selected_video:
         video_url = generate_signed_url(bucket_name, selected_video)
@@ -101,11 +105,14 @@ def main():
         if st.button("Run Analysis"):
             with st.spinner("Analyzing video..."):
                 video_uri = f"gs://{bucket_name}/{selected_video}"
-                analysis_result = analyze_video(video_uri)
+                
+                # Pass the user prompt to the analysis function
+                analysis_result = analyze_video(video_uri, user_prompt)
 
                 if analysis_result:
                     st.success("Analysis complete!")
-                    st.text_area("Analysis Output", analysis_result)
+                    # Set the height of the text area to 300 pixels or any desired value
+                    st.text_area("Analysis Output", analysis_result, height=300)
 
 if __name__ == "__main__":
     main()
