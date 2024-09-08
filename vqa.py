@@ -10,6 +10,15 @@ from vertexai.generative_models import (
     SafetySetting
 )
 
+def local_css(file_name):
+    """
+    CSS for style
+    """
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+local_css("style.css")
+
 def get_google_credentials():
     google_credentials = st.secrets["google_credentials"]
     return service_account.Credentials.from_service_account_info(google_credentials)
