@@ -12,7 +12,7 @@ from vertexai.generative_models import (
 
 def local_css(file_name):
     """
-    CSS for style
+    Load custom CSS for styling
     """
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -23,7 +23,7 @@ def get_google_credentials():
     google_credentials = st.secrets["google_credentials"]
     return service_account.Credentials.from_service_account_info(google_credentials)
 
-#Google Cloud Client with the credentials from Secrets
+# Google Cloud Client with the credentials from Secrets
 credentials = get_google_credentials()
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
 
@@ -95,6 +95,28 @@ def analyze_video(video_uri, user_prompt):
 def main():
     st.title("Visual Question Answering System")
 
+    # How to Guide button
+    if st.button("How to Guide", key="guide_button", help="Click to view instructions"):
+        with st.expander("How to use this app", expanded=True):
+            st.markdown("""
+            ### Step-by-Step Guide:
+            1. **Select a Video**:  
+                - Use the dropdown menu to select a video from the cloud storage.
+            2. **Enter Your Analysis Prompt**:  
+                - In the text area, provide a prompt for analyzing the video. 
+                - For example, ask the system to identify any refueling attempts in the video.
+            3. **Run Analysis**:  
+                - Click the "Run Analysis" button to start the analysis.
+                - The app will generate a detailed report based on the prompt.
+            4. **View Output**:  
+                - Once the analysis is complete, the results will appear in the text area below the video.
+            
+            ### Additional Tips:
+            - Make sure to provide a clear and specific prompt for the best results.
+            - The videos are fetched from Google Cloud Storage, so ensure that your bucket is correctly set up with videos.
+            - The app can process `.mp4` video files.
+            """)
+
     bucket_name = "air-refueling-video-analysis-bucket"  # Your bucket name
     video_files = list_videos(bucket_name)
 
@@ -115,7 +137,7 @@ def main():
                 analysis_result = analyze_video(video_uri, user_prompt)
                 if analysis_result:
                     st.success("Analysis complete!")
-                    # Set the height of the text area to 300 pixels or any desired value
+
                     st.text_area("Analysis Output", analysis_result, height=300)
 
 if __name__ == "__main__":
