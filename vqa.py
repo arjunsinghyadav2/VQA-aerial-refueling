@@ -14,22 +14,23 @@ def get_google_credentials():
     google_credentials = st.secrets["google_credentials"]
     return service_account.Credentials.from_service_account_info(google_credentials)
 
-# Initialize Google Cloud Client with the credentials from Secrets
+#Google Cloud Client with the credentials from Secrets
 credentials = get_google_credentials()
-
-# Initialize Vertex AI with credentials
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
 
-# Function to list videos from Google Cloud Storage
 def list_videos(bucket_name):
+    """
+    Function to list videos from Google Cloud Storage
+    """
     client = storage.Client(credentials=credentials)
     bucket = client.get_bucket(bucket_name)
     blobs = bucket.list_blobs()
     return [blob.name for blob in blobs if blob.name.endswith('.mp4')]
 
-# Function to generate a signed URL for public access
 def generate_signed_url(bucket_name, blob_name):
-    """Generate a signed URL for accessing the video file"""
+    """
+    Generate a signed URL for accessing the video file
+    """
     client = storage.Client(credentials=credentials)
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -37,8 +38,10 @@ def generate_signed_url(bucket_name, blob_name):
     url = blob.generate_signed_url(expiration=timedelta(minutes=30))  
     return url
 
-# Function to analyze video using Vertex AI and user prompt
 def analyze_video(video_uri, user_prompt):
+    """
+    Analyze video using Vertex AI and user prompt
+    """
     video1 = Part.from_uri(mime_type="video/mp4", uri=video_uri)
     
     generation_config = {
@@ -67,7 +70,6 @@ def analyze_video(video_uri, user_prompt):
     ]
     model = GenerativeModel("gemini-1.5-pro-001")
     
-    # Use the user-provided prompt
     responses = model.generate_content(
         [video1, user_prompt],
         generation_config=generation_config,
@@ -90,11 +92,7 @@ def main():
     if not video_files:
         st.warning("No videos found in the bucket.")
         return
-
-    # Dropdown to select a video
     selected_video = st.selectbox("Select a video to analyze", video_files)
-
-    # Add text input for custom user prompt
     user_prompt = st.text_area("Enter your analysis prompt", 
                                value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
@@ -105,10 +103,7 @@ def main():
         if st.button("Run Analysis"):
             with st.spinner("Analyzing video..."):
                 video_uri = f"gs://{bucket_name}/{selected_video}"
-                
-                # Pass the user prompt to the analysis function
                 analysis_result = analyze_video(video_uri, user_prompt)
-
                 if analysis_result:
                     st.success("Analysis complete!")
                     # Set the height of the text area to 300 pixels or any desired value
