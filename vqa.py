@@ -9,14 +9,14 @@ from vertexai.generative_models import (
     GenerativeModel,
     SafetySetting
 )
+from google.cloud.exceptions import NotFound
 
+# Load custom CSS for styling
 def local_css(file_name):
-    """
-    Load custom CSS for styling
-    """
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+# Apply the CSS
 local_css("style.css")
 
 def get_google_credentials():
@@ -46,6 +46,19 @@ def generate_signed_url(bucket_name, blob_name):
 
     url = blob.generate_signed_url(expiration=timedelta(minutes=30))  
     return url
+
+def upload_video_to_gcs(bucket_name, video_file):
+    """
+    Upload a video file to Google Cloud Storage
+    """
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+    
+    # Use the file's name as the blob name in GCS
+    blob = bucket.blob(video_file.name)
+    blob.upload_from_file(video_file)
+    
+    return blob.name
 
 def analyze_video(video_uri, user_prompt):
     """
@@ -95,34 +108,46 @@ def analyze_video(video_uri, user_prompt):
 def main():
     st.title("Visual Question Answering System")
 
-    # How to Guide button
+    # Add the How to Guide button
     if st.button("How to Guide", key="guide_button", help="Click to view instructions"):
         with st.expander("How to use this app", expanded=True):
             st.markdown("""
             ### Step-by-Step Guide:
-            1. **Select a Video**:  
-                - Use the dropdown menu to select a video from the cloud storage.
-            2. **Enter Your Analysis Prompt**:  
+            1. **Upload a Video** (Optional):  
+                - You can upload a `.mp4` video using the "Upload Video" section below.
+            2. **Select a Video**:  
+                - If you've uploaded a video or want to analyze an existing one, select the video from the dropdown.
+            3. **Enter Your Analysis Prompt**:  
                 - In the text area, provide a prompt for analyzing the video. 
                 - For example, ask the system to identify any refueling attempts in the video.
-            3. **Run Analysis**:  
+            4. **Run Analysis**:  
                 - Click the "Run Analysis" button to start the analysis.
                 - The app will generate a detailed report based on the prompt.
-            4. **View Output**:  
+            5. **View Output**:  
                 - Once the analysis is complete, the results will appear in the text area below the video.
-            
-            ### Additional Tips:
-            - Make sure to provide a clear and specific prompt for the best results.
-            - The videos are fetched from Google Cloud Storage, so ensure that your bucket is correctly set up with videos.
-            - The app can process `.mp4` video files.
             """)
 
-    bucket_name = "air-refueling-video-analysis-bucket"  # Your bucket name
+    bucket_name = "air-refueling-video-analysis-bucket"
+    
+    # Video upload functionality
+    st.header("Upload a Video for Analysis")
+    uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
+    
+    if uploaded_video:
+        with st.spinner("Uploading video..."):
+            try:
+                video_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
+                st.success(f"Video '{uploaded_video.name}' uploaded successfully!")
+            except NotFound:
+                st.error("Error: The specified bucket was not found.")
+    
+    # List available videos (including uploaded ones)
     video_files = list_videos(bucket_name)
 
     if not video_files:
         st.warning("No videos found in the bucket.")
         return
+    
     selected_video = st.selectbox("Select a video to analyze", video_files)
     user_prompt = st.text_area("Enter your analysis prompt", 
                                value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
@@ -137,7 +162,6 @@ def main():
                 analysis_result = analyze_video(video_uri, user_prompt)
                 if analysis_result:
                     st.success("Analysis complete!")
-
                     st.text_area("Analysis Output", analysis_result, height=300)
 
 if __name__ == "__main__":
