@@ -84,7 +84,7 @@ def analyze_video(video_uri, user_prompt):
     return output
 
 def main():
-    st.title("Aerial Refueling Video Analysis")
+    st.title("Visual Question Answering System")
 
     bucket_name = "air-refueling-video-analysis-bucket"  # Your bucket name
     video_files = list_videos(bucket_name)
