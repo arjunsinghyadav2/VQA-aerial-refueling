@@ -135,6 +135,8 @@ def main():
                     all_videos = list_videos(bucket_name)
                     st.session_state.video_options = all_videos
                     st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
+        else:
+            st.success("Upload Failed")
 
     # Display the selected video underneath the upload option
     if selected_video:
