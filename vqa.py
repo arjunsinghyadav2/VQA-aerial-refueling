@@ -13,7 +13,7 @@ from vertexai.generative_models import (
 from google.cloud.exceptions import NotFound
 import time  # Import time for unique file names
 
-# Load custom CSS for adding a background image and styling the button
+# Load custom CSS for adding a background image and styling text and buttons
 def set_bg_hack(main_bg):
     '''
     A function to unpack an image from root folder and set as background.
@@ -29,21 +29,27 @@ def set_bg_hack(main_bg):
         }}
         h1 {{
             color: darkblue;
+            font-size: 40px;  /* Increased font size by 2 units */
+            font-weight: bold;  /* Make text bold */
         }}
         h2, p {{
             color: black;
+            font-size: 26px;  /* Increased font size by 2 units */
+            font-weight: bold;  /* Make text bold */
         }}
         label {{
             color: black !important;
+            font-size: 20px !important;  /* Increased font size by 2 units */
+            font-weight: bold !important;  /* Make text bold */
         }}
-        /* Style the button to be light blue */
+        /* Style the button to be light blue with bigger text */
         div.stButton > button:first-child {{
             background-color: #ADD8E6;
             color: black;
             border-radius: 8px;
             padding: 10px 24px;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 20px;  /* Increased font size by 2 units */
+            font-weight: bold;  /* Make text bold */
             border: none;
             cursor: pointer;
         }}
@@ -155,13 +161,13 @@ def main():
     # Set the background using the encoded image and set text/button colors
     set_bg_hack(encoded_image)
 
-    st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 18px;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
 
     bucket_name = "air-refueling-video-analysis-bucket"  # Make sure this is the correct bucket name
 
     # Step 1: Upload or Select a Video
-    st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
     # Initialize session state to keep track of uploaded videos
     if 'uploaded_video_list' not in st.session_state:
@@ -188,7 +194,7 @@ def main():
         st.video(video_url)
 
     # Step 2: Model and Prompt
-    st.markdown("<h2 style='font-size: 24px;'>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
 
@@ -204,7 +210,7 @@ def main():
         user_prompt = st.text_area("Enter your analysis prompt", 
                                     value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
-    # "Run Analysis" button with customized light blue color
+    # "Run Analysis" button with customized light blue color and larger, bold text
     if st.button("Run Analysis"):
         with st.spinner("Analyzing video..."):
             video_uri = f"gs://{bucket_name}/{selected_video}"
