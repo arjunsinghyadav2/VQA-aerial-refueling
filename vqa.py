@@ -10,52 +10,26 @@ from vertexai.generative_models import (
     SafetySetting
 )
 from google.cloud.exceptions import NotFound
-import time
+import time  # Import time for unique file names
 
-# Load custom CSS for styling
-def local_css():
-    st.markdown("""
+# Load custom CSS for adding a background image
+def set_bg_hack(main_bg):
+    '''
+    A function to unpack an image from root folder and set as bg.
+    '''
+    st.markdown(
+        f"""
         <style>
-        /* Set background color to dark navy blue */
-        body {
-            background-color: #001f3f;
-        }
-
-        /* Set text color to make it readable on a dark background */
-        .stMarkdown, .stText, .stTitle, .stHeader, .stSubheader {
-            color: #ffffff;
-        }
-
-        /* Customize button appearance */
-        .stButton>button {
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
-        }
-
-        /* Customize text input and text area */
-        textarea, input {
-            background-color: #001f3f;
-            color: white;
-            border: 1px solid #007bff;
-        }
-
-        /* Customizing select boxes */
-        select {
-            background-color: #001f3f;
-            color: white;
-        }
-        
-        /* Customizing video frame */
-        .stVideo {
-            border: 2px solid #007bff;
-            border-radius: 10px;
-        }
+        .stApp {{
+            background: url("data:image/jpg;base64,{main_bg}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
         </style>
-    """, unsafe_allow_html=True)
-
-# Apply the CSS
-local_css()
+        """,
+        unsafe_allow_html=True
+    )
 
 def get_google_credentials():
     google_credentials = st.secrets["google_credentials"]
@@ -149,6 +123,12 @@ def analyze_video(video_uri, user_prompt, model_version):
     return output
 
 def main():
+    # Load background image
+    with open("p52.jpg", "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode()
+
+    set_bg_hack(encoded_image)
+
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-size: 18px;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
 
@@ -157,24 +137,25 @@ def main():
     # Step 1: Upload or Select a Video
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
-    # Upload and Video Preview - Video preview under upload button
-    selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
+    # Initialize session state to keep track of uploaded videos
+    if 'uploaded_video_list' not in st.session_state:
+        st.session_state.uploaded_video_list = list_videos(bucket_name)
 
-    # Add a button to allow video upload
+    # Upload and Video Preview - Video preview under upload button
     uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
+    # Automatically upload the video when it is selected
     if uploaded_video is not None:
-        if st.button("Upload Selected Video"):
-            with st.spinner("Uploading video..."):
-                uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
-                if uploaded_blob_name:
-                    # Update the selectbox options after upload
-                    all_videos = list_videos(bucket_name)
-                    st.session_state.video_options = all_videos
-                    st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
-                else:
-                    st.error("Upload Failed")
-    
+        with st.spinner("Uploading video..."):
+            uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
+            if uploaded_blob_name:
+                # Update the session state video list without refreshing the app
+                st.session_state.uploaded_video_list = list_videos(bucket_name)
+                st.success(f"Video '{uploaded_blob_name}' uploaded successfully!")
+
+    # Select a video from the session state list
+    selected_video = st.selectbox("Select a video to analyze", st.session_state.uploaded_video_list)
+
     # Display the selected video underneath the upload option
     if selected_video:
         video_url = generate_signed_url(bucket_name, selected_video)
