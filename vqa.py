@@ -24,32 +24,47 @@ def get_google_credentials():
 
 # Google Cloud Client with the credentials from Secrets
 credentials = get_google_credentials()
+storage_client = storage.Client(credentials=credentials)
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
 
 def list_videos(bucket_name):
-    client = storage.Client(credentials=credentials)
-    bucket = client.get_bucket(bucket_name)
+    """
+    Function to list videos from Google Cloud Storage
+    """
+    bucket = storage_client.bucket(bucket_name)
     blobs = bucket.list_blobs()
     return [blob.name for blob in blobs if blob.name.endswith('.mp4')]
 
 def generate_signed_url(bucket_name, blob_name):
-    client = storage.Client(credentials=credentials)
-    bucket = client.bucket(bucket_name)
+    """
+    Generate a signed URL for accessing the video file
+    """
+    bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
 
     url = blob.generate_signed_url(expiration=timedelta(minutes=30))  
     return url
 
 def upload_video_to_gcs(bucket_name, video_file):
-    client = storage.Client(credentials=credentials)
-    bucket = client.bucket(bucket_name)
+    """
+    Upload a video file to Google Cloud Storage
+    """
+    bucket = storage_client.bucket(bucket_name)
     
-    blob = bucket.blob(video_file.name)
-    blob.upload_from_file(video_file)
-    
-    return blob.name
+    try:
+        blob = bucket.blob(video_file.name)
+        blob.upload_from_file(video_file)
+
+        st.success(f"Video '{video_file.name}' uploaded successfully!")
+        return blob.name
+    except Exception as e:
+        st.error(f"Error uploading file: {str(e)}")
+        return None
 
 def analyze_video(video_uri, user_prompt, model_version):
+    """
+    Analyze video using Vertex AI and user prompt
+    """
     video1 = Part.from_uri(mime_type="video/mp4", uri=video_uri)
     
     generation_config = {
@@ -94,13 +109,15 @@ def analyze_video(video_uri, user_prompt, model_version):
 
 def main():
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 18px;'></p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
+
+    bucket_name = "air-refueling-video-analysis-bucket"  # Make sure this is the correct bucket name
 
     # Step 1: Upload or Select a Video
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
     # Upload and Video Preview - Video preview under upload button
-    selected_video = st.selectbox("Select a video to analyze", list_videos("air-refueling-video-analysis-bucket"))
+    selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
 
     # Add a button to allow video upload
     upload_button_clicked = st.button("Upload a Video")
@@ -110,18 +127,16 @@ def main():
 
         if uploaded_video:
             with st.spinner("Uploading video..."):
-                try:
-                    video_blob_name = upload_video_to_gcs("air-refueling-video-analysis-bucket", uploaded_video)
-                    st.success(f"Video '{uploaded_video.name}' uploaded successfully!")
-                except NotFound:
-                    st.error("Error: The specified bucket was not found.")
+                uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
+                if uploaded_blob_name:
+                    st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
 
     # Display the selected video underneath the upload option
     if selected_video:
-        video_url = generate_signed_url("air-refueling-video-analysis-bucket", selected_video)
+        video_url = generate_signed_url(bucket_name, selected_video)
         st.video(video_url)
 
-    # Step 2: Model and Prompt - Enforcing grid alignment with equal widths
+    # Step 2: Model and Prompt
     st.markdown("<h2 style='font-size: 24px;'>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
@@ -141,7 +156,7 @@ def main():
     # "Run Analysis" button right under the text area
     if st.button("Run Analysis"):
         with st.spinner("Analyzing video..."):
-            video_uri = f"gs://air-refueling-video-analysis-bucket/{selected_video}"
+            video_uri = f"gs://{bucket_name}/{selected_video}"
             analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
             if analysis_result:
                 st.success("Analysis complete!")
