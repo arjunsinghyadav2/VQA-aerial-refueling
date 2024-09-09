@@ -10,6 +10,7 @@ from vertexai.generative_models import (
     SafetySetting
 )
 from google.cloud.exceptions import NotFound
+import time  # Import time for unique file names
 
 # Load custom CSS for styling
 def local_css(file_name):
@@ -122,12 +123,10 @@ def main():
     selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
 
     # Add a button to allow video upload
-    upload_button_clicked = st.button("Upload a Video")
+    uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
-    if upload_button_clicked:
-        uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
-
-        if uploaded_video:
+    if uploaded_video is not None:
+        if st.button("Upload Selected Video"):
             with st.spinner("Uploading video..."):
                 uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
                 if uploaded_blob_name:
@@ -135,9 +134,9 @@ def main():
                     all_videos = list_videos(bucket_name)
                     st.session_state.video_options = all_videos
                     st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
-        else:
-            st.success("Upload Failed")
-
+                else:
+                    st.error("Upload Failed")
+    
     # Display the selected video underneath the upload option
     if selected_video:
         video_url = generate_signed_url(bucket_name, selected_video)
@@ -173,7 +172,7 @@ def main():
     with st.expander("How to use this app", expanded=False):
         st.markdown("""
         ### Step-by-Step Guide:
-        1. **Select a Video**: Choose from existing videos or click the "Upload a Video" button to upload a new one.
+        1. **Select a Video**: Choose from existing videos or upload a new one.
         2. **Select a Model Version**: Choose between the light or pro version depending on your needs.
         3. **Enter an Analysis Prompt**: Provide a custom prompt for the AI to analyze.
         4. **Run Analysis**: Click the button to run the analysis and review the output.
