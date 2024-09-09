@@ -1,5 +1,5 @@
 import os
-import base64
+import base64  # Importing base64 for image encoding
 from google.oauth2 import service_account
 import streamlit as st
 from google.cloud import storage
@@ -11,12 +11,12 @@ from vertexai.generative_models import (
     SafetySetting
 )
 from google.cloud.exceptions import NotFound
-import time 
+import time  # Import time for unique file names
 
 # Load custom CSS for adding a background image
 def set_bg_hack(main_bg):
     '''
-    A function to unpack an image from root folder and set as bg.
+    A function to unpack an image from root folder and set as background.
     '''
     st.markdown(
         f"""
@@ -26,6 +26,15 @@ def set_bg_hack(main_bg):
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+        }}
+        h1 {{
+            color: darkblue;
+        }}
+        h2, p {{
+            color: black;
+        }}
+        label {{
+            color: black !important;
         }}
         </style>
         """,
@@ -124,10 +133,11 @@ def analyze_video(video_uri, user_prompt, model_version):
     return output
 
 def main():
-    # Load background image
+    # Load background image and encode it to base64
     with open("p52.jpg", "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
 
+    # Set the background using the encoded image and set text colors
     set_bg_hack(encoded_image)
 
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
