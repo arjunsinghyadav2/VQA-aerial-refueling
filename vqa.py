@@ -11,7 +11,7 @@ from vertexai.generative_models import (
 )
 from google.cloud.exceptions import NotFound
 
-# Load custom CSS for styling and to enforce a grid-like structure
+# Load custom CSS for styling
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -94,11 +94,12 @@ def analyze_video(video_uri, user_prompt, model_version):
 
 def main():
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px;'></p>", unsafe_allow_html=True)
 
     # Step 1: Upload or Select a Video
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
-    # Only one column now for video selection and upload
+    # Upload and Video Preview - Video preview under upload button
     selected_video = st.selectbox("Select a video to analyze", list_videos("air-refueling-video-analysis-bucket"))
 
     # Add a button to allow video upload
@@ -114,7 +115,12 @@ def main():
                     st.success(f"Video '{uploaded_video.name}' uploaded successfully!")
                 except NotFound:
                     st.error("Error: The specified bucket was not found.")
-    
+
+    # Display the selected video underneath the upload option
+    if selected_video:
+        video_url = generate_signed_url("air-refueling-video-analysis-bucket", selected_video)
+        st.video(video_url)
+
     # Step 2: Model and Prompt - Enforcing grid alignment with equal widths
     st.markdown("<h2 style='font-size: 24px;'>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
     
@@ -132,26 +138,14 @@ def main():
         user_prompt = st.text_area("Enter your analysis prompt", 
                                    value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
-    # Step 3: Video Preview and Run Analysis
-    st.markdown("<h2 style='font-size: 24px;'>Step 3: Preview Video and Run Analysis</h2>", unsafe_allow_html=True)
-
-    if selected_video:
-        video_url = generate_signed_url("air-refueling-video-analysis-bucket", selected_video)
-        
-        # Two columns for video preview and analysis result
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            st.video(video_url)
-
-        with col2:
-            if st.button("Run Analysis"):
-                with st.spinner("Analyzing video..."):
-                    video_uri = f"gs://air-refueling-video-analysis-bucket/{selected_video}"
-                    analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
-                    if analysis_result:
-                        st.success("Analysis complete!")
-                        st.text_area("Analysis Output", analysis_result, height=300)
+    # "Run Analysis" button right under the text area
+    if st.button("Run Analysis"):
+        with st.spinner("Analyzing video..."):
+            video_uri = f"gs://air-refueling-video-analysis-bucket/{selected_video}"
+            analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
+            if analysis_result:
+                st.success("Analysis complete!")
+                st.text_area("Analysis Output", analysis_result, height=300)
 
     # Expander for "How to use this app"
     with st.expander("How to use this app", expanded=False):
