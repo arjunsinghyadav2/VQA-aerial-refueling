@@ -120,22 +120,20 @@ def main():
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
     # Upload and Video Preview - Video preview under upload button
-    selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
-
-    # Add a button to allow video upload
     uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
+    # Automatically upload the video when it is selected
     if uploaded_video is not None:
-        if st.button("Upload Selected Video"):
-            with st.spinner("Uploading video..."):
-                uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
-                if uploaded_blob_name:
-                    # Update the selectbox options after upload
-                    all_videos = list_videos(bucket_name)
-                    st.session_state.video_options = all_videos
-                else:
-                    st.error("Upload Failed")
-    
+        with st.spinner("Uploading video..."):
+            uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
+            if uploaded_blob_name:
+                # Update the selectbox options after upload
+                st.success(f"Video '{uploaded_blob_name}' uploaded successfully!")
+                st.experimental_rerun()  # Refresh the app to show the updated video list
+
+    # Select a video from the dropdown
+    selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
+
     # Display the selected video underneath the upload option
     if selected_video:
         video_url = generate_signed_url(bucket_name, selected_video)
