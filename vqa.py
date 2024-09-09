@@ -133,7 +133,6 @@ def main():
                     # Update the selectbox options after upload
                     all_videos = list_videos(bucket_name)
                     st.session_state.video_options = all_videos
-                    st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
                 else:
                     st.error("Upload Failed")
     
