@@ -13,7 +13,7 @@ from vertexai.generative_models import (
 from google.cloud.exceptions import NotFound
 import time  # Import time for unique file names
 
-# Load custom CSS for adding a background image
+# Load custom CSS for adding a background image and styling the button
 def set_bg_hack(main_bg):
     '''
     A function to unpack an image from root folder and set as background.
@@ -35,6 +35,21 @@ def set_bg_hack(main_bg):
         }}
         label {{
             color: black !important;
+        }}
+        /* Style the button to be light blue */
+        div.stButton > button:first-child {{
+            background-color: #ADD8E6;
+            color: black;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }}
+        div.stButton > button:first-child:hover {{
+            background-color: #87CEEB;
+            color: black;
         }}
         </style>
         """,
@@ -137,7 +152,7 @@ def main():
     with open("p52.jpg", "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
 
-    # Set the background using the encoded image and set text colors
+    # Set the background using the encoded image and set text/button colors
     set_bg_hack(encoded_image)
 
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
@@ -189,7 +204,7 @@ def main():
         user_prompt = st.text_area("Enter your analysis prompt", 
                                     value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
-    # "Run Analysis" button right under the text area
+    # "Run Analysis" button with customized light blue color
     if st.button("Run Analysis"):
         with st.spinner("Analyzing video..."):
             video_uri = f"gs://{bucket_name}/{selected_video}"
