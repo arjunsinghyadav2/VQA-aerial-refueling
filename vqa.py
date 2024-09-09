@@ -11,12 +11,11 @@ from vertexai.generative_models import (
 )
 from google.cloud.exceptions import NotFound
 
-# Load custom CSS for styling
+# Load custom CSS for styling and to enforce a grid-like structure
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Apply the CSS
 local_css("style.css")
 
 def get_google_credentials():
@@ -28,18 +27,12 @@ credentials = get_google_credentials()
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
 
 def list_videos(bucket_name):
-    """
-    Function to list videos from Google Cloud Storage
-    """
     client = storage.Client(credentials=credentials)
     bucket = client.get_bucket(bucket_name)
     blobs = bucket.list_blobs()
     return [blob.name for blob in blobs if blob.name.endswith('.mp4')]
 
 def generate_signed_url(bucket_name, blob_name):
-    """
-    Generate a signed URL for accessing the video file
-    """
     client = storage.Client(credentials=credentials)
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -48,22 +41,15 @@ def generate_signed_url(bucket_name, blob_name):
     return url
 
 def upload_video_to_gcs(bucket_name, video_file):
-    """
-    Upload a video file to Google Cloud Storage
-    """
     client = storage.Client(credentials=credentials)
     bucket = client.bucket(bucket_name)
     
-    # Use the file's name as the blob name in GCS
     blob = bucket.blob(video_file.name)
     blob.upload_from_file(video_file)
     
     return blob.name
 
 def analyze_video(video_uri, user_prompt, model_version):
-    """
-    Analyze video using Vertex AI and user prompt
-    """
     video1 = Part.from_uri(mime_type="video/mp4", uri=video_uri)
     
     generation_config = {
@@ -91,7 +77,7 @@ def analyze_video(video_uri, user_prompt, model_version):
         ),
     ]
     
-    model = GenerativeModel(model_version)  # Use the selected model version
+    model = GenerativeModel(model_version)
     
     responses = model.generate_content(
         [video1, user_prompt],
@@ -107,18 +93,18 @@ def analyze_video(video_uri, user_prompt, model_version):
     return output
 
 def main():
-    # Title Section with uniform font sizes
     st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 18px;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
 
-    # Step 1: Video Upload or Selection
+    # Step 1: Upload or Select a Video
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
-    # Two columns for video upload and selection
-    col1, col2 = st.columns(2)
+    # Only one column now for video selection and upload
+    selected_video = st.selectbox("Select a video to analyze", list_videos("air-refueling-video-analysis-bucket"))
 
-    with col1:
-        st.subheader("Upload a Video")
+    # Add a button to allow video upload
+    upload_button_clicked = st.button("Upload a Video")
+
+    if upload_button_clicked:
         uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
         if uploaded_video:
@@ -129,21 +115,10 @@ def main():
                 except NotFound:
                     st.error("Error: The specified bucket was not found.")
     
-    with col2:
-        st.subheader("Select an Existing Video")
-        video_files = list_videos("air-refueling-video-analysis-bucket")
-
-        if not video_files:
-            st.warning("No videos found in the bucket.")
-            return
-
-        selected_video = st.selectbox("Select a video to analyze", video_files)
-    
-    # Step 2: Model and Prompt
+    # Step 2: Model and Prompt - Enforcing grid alignment with equal widths
     st.markdown("<h2 style='font-size: 24px;'>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
     
-    # Two columns for model selection and user prompt
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns(2)
 
     with col1:
         model_version = st.selectbox("Select Model Version", ["Light", "Pro"])
@@ -164,7 +139,7 @@ def main():
         video_url = generate_signed_url("air-refueling-video-analysis-bucket", selected_video)
         
         # Two columns for video preview and analysis result
-        col1, col2 = st.columns([2, 3])
+        col1, col2 = st.columns([1, 1])
 
         with col1:
             st.video(video_url)
@@ -182,7 +157,7 @@ def main():
     with st.expander("How to use this app", expanded=False):
         st.markdown("""
         ### Step-by-Step Guide:
-        1. **Upload or Select a Video**: Upload a video or choose from existing videos.
+        1. **Select a Video**: Choose from existing videos or click the "Upload a Video" button to upload a new one.
         2. **Select a Model Version**: Choose between the light or pro version depending on your needs.
         3. **Enter an Analysis Prompt**: Provide a custom prompt for the AI to analyze.
         4. **Run Analysis**: Click the button to run the analysis and review the output.
