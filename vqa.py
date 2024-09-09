@@ -11,19 +11,20 @@ from vertexai.generative_models import (
 )
 from google.cloud.exceptions import NotFound
 
-# Load custom CSS for styling
 def local_css(file_name):
+    """
+    Load custom CSS for styling
+    """
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Apply the CSS
 local_css("style.css")
 
 def get_google_credentials():
     google_credentials = st.secrets["google_credentials"]
     return service_account.Credentials.from_service_account_info(google_credentials)
 
-# Google Cloud Client with the credentials from Secrets
+#Google Cloud Client with the credentials from Secrets
 credentials = get_google_credentials()
 vertexai.init(project="genai-project-434704", location="us-central1", credentials=credentials)
 
@@ -53,14 +54,12 @@ def upload_video_to_gcs(bucket_name, video_file):
     """
     client = storage.Client(credentials=credentials)
     bucket = client.bucket(bucket_name)
-    
-    # Use the file's name as the blob name in GCS
     blob = bucket.blob(video_file.name)
     blob.upload_from_file(video_file)
     
     return blob.name
 
-def analyze_video(video_uri, user_prompt):
+def analyze_video(video_uri, user_prompt, model_version):
     """
     Analyze video using Vertex AI and user prompt
     """
@@ -90,7 +89,8 @@ def analyze_video(video_uri, user_prompt):
             threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
         ),
     ]
-    model = GenerativeModel("gemini-1.5-pro-001")
+    
+    model = GenerativeModel(model_version)
     
     responses = model.generate_content(
         [video1, user_prompt],
@@ -108,7 +108,7 @@ def analyze_video(video_uri, user_prompt):
 def main():
     st.title("Visual Question Answering System")
 
-    # Add the How to Guide button
+
     if st.button("How to Guide", key="guide_button", help="Click to view instructions"):
         with st.expander("How to use this app", expanded=True):
             st.markdown("""
@@ -117,19 +117,20 @@ def main():
                 - You can upload a `.mp4` video using the "Upload Video" section below.
             2. **Select a Video**:  
                 - If you've uploaded a video or want to analyze an existing one, select the video from the dropdown.
-            3. **Enter Your Analysis Prompt**:  
+            3. **Select Model Version**:  
+                - Choose between the **Light** (fast and lower-cost) or **Pro** (more powerful) version of the model for analysis.
+            4. **Enter Your Analysis Prompt**:  
                 - In the text area, provide a prompt for analyzing the video. 
                 - For example, ask the system to identify any refueling attempts in the video.
-            4. **Run Analysis**:  
+            5. **Run Analysis**:  
                 - Click the "Run Analysis" button to start the analysis.
                 - The app will generate a detailed report based on the prompt.
-            5. **View Output**:  
+            6. **View Output**:  
                 - Once the analysis is complete, the results will appear in the text area below the video.
             """)
 
-    bucket_name = "air-refueling-video-analysis-bucket"
+    bucket_name = "air-refueling-video-analysis-bucket" 
     
-    # Video upload functionality
     st.header("Upload a Video for Analysis")
     uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
     
@@ -141,7 +142,6 @@ def main():
             except NotFound:
                 st.error("Error: The specified bucket was not found.")
     
-    # List available videos (including uploaded ones)
     video_files = list_videos(bucket_name)
 
     if not video_files:
@@ -149,6 +149,14 @@ def main():
         return
     
     selected_video = st.selectbox("Select a video to analyze", video_files)
+    
+    model_version = st.selectbox("Select model version", ["Light (gemini-1.5-flash-001)", "Pro (gemini-1.5-pro-001)"])
+    model_version_mapping = {
+        "Light": "gemini-1.5-flash-001",
+        "Pro": "gemini-1.5-pro-001"
+    }
+    selected_model_version = model_version_mapping[model_version]
+    
     user_prompt = st.text_area("Enter your analysis prompt", 
                                value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
@@ -159,7 +167,7 @@ def main():
         if st.button("Run Analysis"):
             with st.spinner("Analyzing video..."):
                 video_uri = f"gs://{bucket_name}/{selected_video}"
-                analysis_result = analyze_video(video_uri, user_prompt)
+                analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
                 if analysis_result:
                     st.success("Analysis complete!")
                     st.text_area("Analysis Output", analysis_result, height=300)
