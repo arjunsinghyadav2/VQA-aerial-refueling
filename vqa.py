@@ -42,7 +42,7 @@ def generate_signed_url(bucket_name, blob_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
 
-    url = blob.generate_signed_url(expiration=timedelta(minutes=30))  
+    url = blob.generate_signed_url(expiration=timedelta(minutes=30)) 
     return url
 
 def upload_video_to_gcs(bucket_name, video_file):
@@ -52,11 +52,13 @@ def upload_video_to_gcs(bucket_name, video_file):
     bucket = storage_client.bucket(bucket_name)
     
     try:
-        blob = bucket.blob(video_file.name)
+        # Create a new blob with a unique name to avoid overwriting
+        blob_name = f"{int(time.time())}_{video_file.name}" 
+        blob = bucket.blob(blob_name)
         blob.upload_from_file(video_file)
 
-        st.success(f"Video '{video_file.name}' uploaded successfully!")
-        return blob.name
+        st.success(f"Video '{video_file.name}' uploaded successfully as '{blob_name}'!")
+        return blob_name
     except Exception as e:
         st.error(f"Error uploading file: {str(e)}")
         return None
@@ -75,20 +77,20 @@ def analyze_video(video_uri, user_prompt, model_version):
 
     safety_settings = [
         SafetySetting(
-            category=SafetySetting.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+          category=SafetySetting.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
         ),
         SafetySetting(
-            category=SafetySetting.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+          category=SafetySetting.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
         ),
         SafetySetting(
-            category=SafetySetting.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+          category=SafetySetting.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
         ),
         SafetySetting(
-            category=SafetySetting.HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+          category=SafetySetting.HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
         ),
     ]
     
@@ -129,6 +131,9 @@ def main():
             with st.spinner("Uploading video..."):
                 uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
                 if uploaded_blob_name:
+                    # Update the selectbox options after upload
+                    all_videos = list_videos(bucket_name)
+                    st.session_state.video_options = all_videos
                     st.success(f"Video uploaded successfully and saved as '{uploaded_blob_name}'")
 
     # Display the selected video underneath the upload option
@@ -151,7 +156,7 @@ def main():
 
     with col2:
         user_prompt = st.text_area("Enter your analysis prompt", 
-                                   value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
+                                    value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
     # "Run Analysis" button right under the text area
     if st.button("Run Analysis"):
