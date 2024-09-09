@@ -150,12 +150,13 @@ def main():
     
     selected_video = st.selectbox("Select a video to analyze", video_files)
     
-    model_version = st.selectbox("Select model version", ["Light (gemini-1.5-flash-001)", "Pro (gemini-1.5-pro-001)"])
+    model_version = st.selectbox("Select model version", ["Light", "Pro"])
+
     model_version_mapping = {
         "Light": "gemini-1.5-flash-001",
-        "Pro": "gemini-1.5-pro-001"
-    }
+        "Pro": "gemini-1.5-pro-001"}
     selected_model_version = model_version_mapping[model_version]
+    st.write(f"Selected model version: {model_version}")
     
     user_prompt = st.text_area("Enter your analysis prompt", 
                                value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
