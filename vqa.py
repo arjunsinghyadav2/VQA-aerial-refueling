@@ -119,6 +119,10 @@ def main():
     # Step 1: Upload or Select a Video
     st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
+    # Initialize session state to keep track of uploaded videos
+    if 'uploaded_video_list' not in st.session_state:
+        st.session_state.uploaded_video_list = list_videos(bucket_name)
+
     # Upload and Video Preview - Video preview under upload button
     uploaded_video = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
@@ -127,12 +131,12 @@ def main():
         with st.spinner("Uploading video..."):
             uploaded_blob_name = upload_video_to_gcs(bucket_name, uploaded_video)
             if uploaded_blob_name:
-                # Update the selectbox options after upload
+                # Update the session state video list without refreshing the app
+                st.session_state.uploaded_video_list = list_videos(bucket_name)
                 st.success(f"Video '{uploaded_blob_name}' uploaded successfully!")
-                st.experimental_rerun()  # Refresh the app to show the updated video list
 
-    # Select a video from the dropdown
-    selected_video = st.selectbox("Select a video to analyze", list_videos(bucket_name))
+    # Select a video from the session state list
+    selected_video = st.selectbox("Select a video to analyze", st.session_state.uploaded_video_list)
 
     # Display the selected video underneath the upload option
     if selected_video:
