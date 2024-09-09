@@ -107,14 +107,14 @@ def analyze_video(video_uri, user_prompt, model_version):
     return output
 
 def main():
-    # Title Section
-    st.title("Visual Question Answering System")
-    st.markdown("Use AI to analyze aerial refueling videos and extract meaningful insights.")
+    # Title Section with uniform font sizes
+    st.markdown("<h1 style='text-align: center; font-size: 36px;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
 
-    # Layout: Split the screen into two columns for file upload and video selection
-    st.header("Step 1: Upload or Select a Video")
+    # Step 1: Video Upload or Selection
+    st.markdown("<h2 style='font-size: 24px;'>Step 1: Upload or Select a Video</h2>", unsafe_allow_html=True)
 
-    # Use two columns for video upload and selection
+    # Two columns for video upload and selection
     col1, col2 = st.columns(2)
 
     with col1:
@@ -139,8 +139,8 @@ def main():
 
         selected_video = st.selectbox("Select a video to analyze", video_files)
     
-    # Model and Prompt Section
-    st.header("Step 2: Choose Model Version and Enter Prompt")
+    # Step 2: Model and Prompt
+    st.markdown("<h2 style='font-size: 24px;'>Step 2: Choose Model Version and Enter Prompt</h2>", unsafe_allow_html=True)
     
     # Two columns for model selection and user prompt
     col1, col2 = st.columns([1, 2])
@@ -157,21 +157,28 @@ def main():
         user_prompt = st.text_area("Enter your analysis prompt", 
                                    value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
 
-    # Display the selected video
+    # Step 3: Video Preview and Run Analysis
+    st.markdown("<h2 style='font-size: 24px;'>Step 3: Preview Video and Run Analysis</h2>", unsafe_allow_html=True)
+
     if selected_video:
-        st.header("Step 3: Preview Video and Run Analysis")
         video_url = generate_signed_url("air-refueling-video-analysis-bucket", selected_video)
-        st.video(video_url)
+        
+        # Two columns for video preview and analysis result
+        col1, col2 = st.columns([2, 3])
 
-        if st.button("Run Analysis"):
-            with st.spinner("Analyzing video..."):
-                video_uri = f"gs://air-refueling-video-analysis-bucket/{selected_video}"
-                analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
-                if analysis_result:
-                    st.success("Analysis complete!")
-                    st.text_area("Analysis Output", analysis_result, height=300)
+        with col1:
+            st.video(video_url)
 
-    # Add a helpful How to Guide section at the bottom
+        with col2:
+            if st.button("Run Analysis"):
+                with st.spinner("Analyzing video..."):
+                    video_uri = f"gs://air-refueling-video-analysis-bucket/{selected_video}"
+                    analysis_result = analyze_video(video_uri, user_prompt, selected_model_version)
+                    if analysis_result:
+                        st.success("Analysis complete!")
+                        st.text_area("Analysis Output", analysis_result, height=300)
+
+    # Expander for "How to use this app"
     with st.expander("How to use this app", expanded=False):
         st.markdown("""
         ### Step-by-Step Guide:
