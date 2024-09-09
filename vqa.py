@@ -1,4 +1,5 @@
 import os
+import base64
 from google.oauth2 import service_account
 import streamlit as st
 from google.cloud import storage
@@ -10,7 +11,7 @@ from vertexai.generative_models import (
     SafetySetting
 )
 from google.cloud.exceptions import NotFound
-import time  # Import time for unique file names
+import time 
 
 # Load custom CSS for adding a background image
 def set_bg_hack(main_bg):
