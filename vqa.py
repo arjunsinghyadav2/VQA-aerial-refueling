@@ -155,7 +155,7 @@ def analyze_video(video_uri, user_prompt, model_version):
 
 def main():
     # Load background image and encode it to base64
-    with open("p52.jpg", "rb") as image_file:
+    with open("most_beautiful_places_nature_08.jpg", "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
 
     # Set the background using the encoded image and set text/button colors
