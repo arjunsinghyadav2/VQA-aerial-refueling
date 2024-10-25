@@ -161,8 +161,8 @@ def main():
     # Set the background using the encoded image and set text/button colors
     set_bg_hack(encoded_image)
 
-    st.markdown("<h1 style='text-align: center;'>Visual Question Answering System</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Use AI to analyze aerial refueling videos and extract meaningful insights.</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Analyzing Videos with Multimodal Large Language Model</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>A Deep Dive into Video Question Answering</p>", unsafe_allow_html=True)
 
     bucket_name = "air-refueling-video-analysis-bucket"  # Make sure this is the correct bucket name
 
@@ -208,7 +208,7 @@ def main():
 
     with col2:
         user_prompt = st.text_area("Enter your analysis prompt", 
-                                    value="Give time steps of any aircraft tries an attempt to refuel, do not leave out any attempts due to any reason? During this time layout time for each attempt whether successful or unsuccessful.")
+                                    value="When does x happen in the video")
 
     # "Run Analysis" button with customized light blue color and larger, bold text
     if st.button("Run Analysis"):
